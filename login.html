@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login | Xsheet</title>
+  <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+<header class="navbar">
+  <div class="logo">X<span>sheet</span></div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="upload.html">Upload</a>
+    <a href="login.html">Login</a>
+    <a href="register.html">Register</a>
+  </nav>
+</header>
+
+
+  <!-- Curved Background Section -->
+<section class="curve-section">
+  <div class="login-box">
+    <h2>Login to <span class="highlight">Xsheet</span></h2>
+    <form id="loginForm">
+      <input type="email" placeholder="Email" required />
+      <input type="password" placeholder="Password" required />
+      <button class="btn-primary" type="submit">Login</button>
+      <p>Don't have an account? <a href="register.html">Register here</a></p>
+    </form>
+  </div>
+  
+  <svg class="curve" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 220">
+    <path fill="#f5f7fa" fill-opacity="1" d="M0,160L1440,0L1440,320L0,320Z"></path>
+  </svg>
+</section>
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      localStorage.setItem("isLoggedIn", "true");
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>

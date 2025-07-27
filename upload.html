@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Excel Data Preview & Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f1f2f7;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to right, #5c6bc0, #42a5f5);
+      padding: 16px 50px;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+    }
+    .logo span {
+      color: #ffeb3b;
+    }
+    .navbar nav a {
+      margin-left: 30px;
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
+      transition: 0.3s ease;
+    }
+    .navbar nav a:hover, .navbar nav a.active {
+      color: #ffeb3b;
+    }
+    .container {
+      padding: 20px 10%;
+    }
+    .card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .card h3 {
+      color: #2e86c1;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th, td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #5dade2;
+    }
+    th {
+      background-color: #f0ebfa;
+      color: #6a00ff;
+    }
+    select, input[type="file"], button {
+      padding: 10px;
+      margin: 10px 10px 0 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background: linear-gradient(to right, #5dade2, #3498db);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    #myChart {
+      max-width: 2000px;
+      max-height: 800px;
+      margin: 20px auto 10px;
+      display: block;
+    }
+    .download-buttons {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .download-buttons button {
+      margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ✅ Navbar -->
+<header class="navbar">
+  <div class="logo">X<span>sheet</span></div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="upload.html">Upload</a>
+    <a href="login.html">Login</a>
+    <a href="register.html">Register</a>
+  </nav>
+</header>
+
+<!-- ✅ Content -->
+<div class="container">
+
+  <!-- Upload Card -->
+  <div class="card">
+    <h3>📤 Upload New File</h3>
+    <input type="file" id="excelFile" accept=".xlsx" />
+    <p id="fileName" style="color: gray;"></p>
+  </div>
+
+  <!-- Preview Table -->
+  <div class="card">
+    <h3>📋 Preview Uploaded Data</h3>
+    <table id="previewTable">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Chart Generator -->
+  <div class="card">
+    <h3>📊 Generate Chart</h3>
+    <label>X Axis</label>
+    <select id="xAxis"></select>
+    <label>Y Axis</label>
+    <select id="yAxis"></select>
+    <label>Chart Type</label>
+    <select id="chartType">
+      <option value="bar">Bar</option>
+      <option value="line">Line</option>
+      <option value="pie">Pie</option>
+      <option value="doughnut">Doughnut</option>
+      <option value="polarArea">Polar Area</option>
+    </select>
+    <button onclick="generateChart()">Generate Chart</button>
+    <canvas id="myChart"></canvas>
+    <div class="download-buttons">
+      <button onclick="downloadPNG()">Download as PNG</button>
+      <button onclick="downloadPDF()">Download as PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ JavaScript -->
+<script>
+  let excelData = [];
+  let chart;
+
+  document.getElementById('excelFile').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('fileName').innerText = `Selected File: ${file.name}`;
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(sheet);
+      excelData = jsonData;
+      displayTable(jsonData);
+      populateDropdowns(jsonData);
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+
+  function displayTable(data) {
+    const thead = document.querySelector('#previewTable thead');
+    const tbody = document.querySelector('#previewTable tbody');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    if (data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const tr = document.createElement('tr');
+    headers.forEach(header => {
+      const th = document.createElement('th');
+      th.innerText = header;
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      headers.forEach(header => {
+        const td = document.createElement('td');
+        td.innerText = row[header];
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function populateDropdowns(data) {
+    const xSelect = document.getElementById('xAxis');
+    const ySelect = document.getElementById('yAxis');
+    xSelect.innerHTML = '';
+    ySelect.innerHTML = '';
+
+    if (data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    headers.forEach(header => {
+      const optX = document.createElement('option');
+      optX.value = header;
+      optX.innerText = header;
+      xSelect.appendChild(optX);
+
+      const optY = document.createElement('option');
+      optY.value = header;
+      optY.innerText = header;
+      ySelect.appendChild(optY);
+    });
+  }
+
+  function generateColors(length) {
+    const colors = [];
+    for (let i = 0; i < length; i++) {
+      const hue = Math.floor(Math.random() * 360);
+      colors.push(`hsl(${hue}, 70%, 60%)`);
+    }
+    return colors;
+  }
+
+  function generateChart() {
+    const xKey = document.getElementById('xAxis').value;
+    const yKey = document.getElementById('yAxis').value;
+    const chartType = document.getElementById('chartType').value;
+
+    if (!xKey || !yKey) {
+      alert("Please select both X and Y axis.");
+      return;
+    }
+
+    const labels = excelData.map(row => row[xKey]);
+    const data = excelData.map(row => parseFloat(row[yKey]) || 0);
+    const backgroundColors = generateColors(data.length);
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(document.getElementById('myChart'), {
+      type: chartType,
+      data: {
+        labels: labels,
+        datasets: [{
+          label: `${yKey} vs ${xKey}`,
+          data: data,
+          backgroundColor: backgroundColors,
+          borderColor: '#6a00ff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: chartType !== 'pie' && chartType !== 'doughnut'
+          }
+        }
+      }
+    });
+  }
+
+  function downloadPNG() {
+    const canvas = document.getElementById('myChart');
+    const link = document.createElement('a');
+    link.download = 'chart.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const canvas = document.getElementById('myChart');
+    const imageData = canvas.toDataURL('image/png');
+    doc.addImage(imageData, 'PNG', 10, 10, 180, 100);
+    doc.save('chart.pdf');
+  }
+</script>
+</body>
+</html>
